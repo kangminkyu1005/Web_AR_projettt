@@ -1,44 +1,56 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>WebXR 지점 선택 AR - 코딩 파트너</title>
+    <meta charset="utf-8">
+    <title>WebXR 터치 지점 이미지 생성 - 코딩 파트너</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
     <script>
+      // 터치 시 이미지를 생성하는 커스텀 컴포넌트 등록
       AFRAME.registerComponent('tap-to-place', {
         init: function () {
           const sceneEl = this.el;
-          
-          // 화면 클릭 이벤트 리스너
+
+          // 클릭(터치) 이벤트 리스너
           window.addEventListener('click', (event) => {
-            // 레이캐스터(가상의 선) 정보 가져오기
-            const touchPoint = new THREE.Vector2();
-            touchPoint.x = (event.clientX / window.innerWidth) * 2 - 1;
-            touchPoint.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            // 1. 새로운 'a-image' 요소 생성
+            const newImage = document.createElement('a-image');
+            
+            // 2. CORS 에러 방지를 위한 보안 설정
+            newImage.setAttribute('crossorigin', 'anonymous');
+            
+            // 3. 외부 이미지 경로 설정 (업로드 없이 사용 가능한 샘플 이미지)
+            // 파라미터: 크기(300x300) / 배경색(푸른색) / 글자색(흰색) / 텍스트
+            newImage.setAttribute('src', 'https://placehold.jp/24/3e556e/ffffff/300x300.png?text=AR%20POINT');
+            
+            // 4. 크기 설정 (단위: 미터)
+            newImage.setAttribute('width', '0.5');
+            newImage.setAttribute('height', '0.5');
 
-            // 터치한 지점에 새로운 '이미지 표시' 생성
-            const newElement = document.createElement('a-curvedimage');
+            // 5. 위치 계산: 카메라가 바라보는 방향 2미터 앞에 배치
+            const cameraEl = document.querySelector('[camera]');
+            const cameraOrbit = cameraEl.object3D;
             
-            // 이미지 업로드 없이 외부 샘플 이미지 사용 (800x800 랜덤 이미지)
-            newElement.setAttribute('src', 'https://picsum.photos/200');
-            newElement.setAttribute('height', '0.5');
-            newElement.setAttribute('width', '0.5');
-            
-            // 카메라가 바라보는 방향의 일정 거리(2m 앞)에 배치 (간단한 구현용)
-            // 실제 바닥 인식을 위해서는 WebXR Hit-test 설정이 필요하지만, 
-            // 즉시 실행 가능한 코드를 위해 레이캐스터 위치에 생성합니다.
-            const camera = document.querySelector('[camera]').object3D;
-            const position = new THREE.Vector3(0, 0, -2); // 카메라 앞 2미터
-            position.applyQuaternion(camera.quaternion);
-            position.add(camera.position);
+            // 카메라의 현재 전방 방향 벡터 계산
+            const position = new THREE.Vector3(0, 0, -2); // 카메라 앞 2m
+            position.applyQuaternion(cameraOrbit.quaternion);
+            position.add(cameraOrbit.position);
 
-            newElement.setAttribute('position', position);
-            newElement.setAttribute('look-at', '[camera]'); // 카메라를 향하게 설정
+            newImage.setAttribute('position', position);
+
+            // 6. 이미지가 항상 사용자를 바라보게 설정 (빌보드 효과)
+            newImage.setAttribute('look-at', '[camera]');
+
+            // 장면에 추가
+            sceneEl.appendChild(newImage);
             
-            sceneEl.appendChild(newElement);
+            console.log("새로운 AR 이미지가 생성되었습니다:", position);
           });
         }
       });
     </script>
+    
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
   </head>
 
   <body style="margin: 0; overflow: hidden;">
@@ -47,14 +59,14 @@
       ar-mode-ui="enabled: true"
       tap-to-place>
       
-      <a-assets>
-        </a-assets>
+      <a-light type="ambient" intensity="0.7"></a-light>
+      <a-light type="directional" position="1 2 1" intensity="0.5"></a-light>
 
       <a-entity camera position="0 1.6 0" look-controls></a-entity>
 
-      <a-light type="ambient" intensity="0.5"></a-light>
-      <a-light type="directional" position="1 2 1" intensity="1"></a-light>
-
+      <div style="position: fixed; bottom: 20px; width: 100%; text-align: center; z-index: 1; color: white; font-family: sans-serif; background: rgba(0,0,0,0.5);">
+        화면을 터치하여 AR 이미지를 생성하세요!
+      </div>
     </a-scene>
   </body>
 </html>
