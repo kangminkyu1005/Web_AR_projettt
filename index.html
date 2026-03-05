@@ -1,65 +1,94 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>WebAR 최종 해결 버전</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-    <script>
-      AFRAME.registerComponent('tap-to-place', {
-        init: function () {
-          // 화면 전체 클릭 이벤트
-          window.addEventListener('click', () => {
-            const sceneEl = this.el;
-            const cameraEl = document.querySelector('[camera]');
-            
-            // 1. 새로운 표시 객체(구체) 생성
-            const newPoint = document.createElement('a-sphere');
-            newPoint.setAttribute('radius', '0.1');
-            newPoint.setAttribute('color', '#FF4500'); // 선명한 주황색
-            newPoint.setAttribute('material', 'shader: flat;');
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>WebAR 카메라 해결 버전</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script>
+    // 에러 방지를 위해 고유 이름 사용
+    AFRAME.registerComponent('ar-manager', {
+      init: function () {
+        this.reticle = document.getElementById('reticle');
+        this.xrHitTestSource = null;
+        this.viewerSpace = null;
 
-            // 2. 카메라 앞 1미터 지점 계산 (에러 났던 point 대신 사용)
-            const cameraOrbit = cameraEl.object3D;
-            const position = new THREE.Vector3(0, 0, -1); // 카메라 정면 1m 앞
-            position.applyQuaternion(cameraOrbit.quaternion);
-            position.add(cameraOrbit.position);
+        // AR 세션이 시작될 때 카메라 피드 연결 확인
+        this.el.sceneEl.renderer.xr.addEventListener('sessionstart', async () => {
+          const session = this.el.sceneEl.renderer.xr.getSession();
+          this.viewerSpace = await session.requestReferenceSpace('viewer');
+          this.xrHitTestSource = await session.requestHitTestSource({ space: this.viewerSpace });
+          console.log("AR 세션 시작됨");
+        });
 
-            newPoint.setAttribute('position', position);
-            
-            // 3. 장면에 추가
-            sceneEl.appendChild(newPoint);
-            console.log("포인트 생성 완료:", position);
-          });
+        // 터치 시 물체 생성
+        window.addEventListener('click', () => {
+          if (this.reticle && this.reticle.getAttribute('visible')) {
+            const ball = document.createElement('a-sphere');
+            ball.setAttribute('radius', '0.05');
+            ball.setAttribute('color', '#FF4500');
+            ball.setAttribute('position', this.reticle.getAttribute('position'));
+            this.el.sceneEl.appendChild(ball);
+          }
+        });
+      },
+      tick: function () {
+        const frame = this.el.sceneEl.frame;
+        if (!frame || !this.xrHitTestSource) return;
+
+        const hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
+        if (hitTestResults.length > 0) {
+          const hit = hitTestResults[0];
+          const pose = hit.getPose(this.el.sceneEl.renderer.xr.getReferenceSpace());
+          this.reticle.setAttribute('visible', true);
+          this.reticle.setAttribute('position', pose.transform.position);
+          this.reticle.object3D.quaternion.copy(pose.transform.orientation);
+        } else {
+          this.reticle.setAttribute('visible', false);
         }
-      });
-    </script>
-    <style>
-      /* 카메라 권한 요청 시 배경이 검게 보이지 않도록 처리 */
-      body { margin: 0; overflow: hidden; background-color: black; }
-      #guide-ui {
-        position: fixed; top: 10px; width: 100%; text-align: center;
-        z-index: 100; color: yellow; font-weight: bold;
-        text-shadow: 1px 1px 2px black;
       }
-    </style>
-  </head>
+    });
+  </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: transparent;
+    }
 
-  <body>
-    <div id="guide-ui">화면을 터치하면 카메라 앞 1m 지점에 구체가 생성됩니다!</div>
+    #overlay {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      font-family: sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
 
-    <a-scene 
-      embedded 
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-      vr-mode-ui="enabled: false"
-      tap-to-place>
-      
-      <a-light type="ambient" intensity="1.5"></a-light>
+<body>
+  <div id="overlay">
+    1. 오른쪽 아래 <b>[AR]</b> 버튼 클릭<br>
+    2. 카메라 권한 <b>'허용'</b><br>
+    3. 바닥을 비추면 초록 원이 생깁니다.
+  </div>
 
-      <a-entity camera position="0 1.6 0" look-controls></a-entity>
-      
-    </a-scene>
-  </body>
+  <a-scene webxr="optionalFeatures: hit-test, local-floor;"
+    renderer="antialias: true; alpha: true; colorManagement: true; precision: medium;" ar-manager>
+
+    <a-ring id="reticle" rotation="-90 0 0" radius-inner="0.04" radius-outer="0.06" color="#00FF00"
+      visible="false"></a-ring>
+
+    <a-entity camera position="0 1.6 0"></a-entity>
+    <a-light type="ambient" intensity="1"></a-light>
+  </a-scene>
+</body>
+
 </html>
