@@ -1,95 +1,28 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>손가락 마법 AR - 카메라 해결</title>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-  
-  <style>
-    body { margin: 0; overflow: hidden; background-color: #000; }
-    /* 카메라 영상을 화면 전체에 꽉 채우기 */
-    #input_video {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; z-index: -2; /* 가장 뒤로 */
-      transform: scaleX(-1); /* 셀카 모드 반전 */
-    }
-    #guide {
-      position: fixed; top: 20px; width: 100%; text-align: center;
-      color: #00FF00; z-index: 10; font-family: sans-serif;
-      font-weight: bold; text-shadow: 2px 2px 4px #000;
-    }
-  </style>
-</head>
-<body>
-  <div id="guide">카메라 권한을 허용하고 검지 손가락을 펴보세요!</div>
-  
-  <video id="input_video" autoplay playsinline></video>
-  
-  <a-scene embedded vr-mode-ui="enabled: false" renderer="alpha: true;">
-    <a-sphere id="magic-ball" 
-              radius="0.06" 
-              color="#FF8C00" 
-              material="emissive: #FF4500; emissiveIntensity: 2; shader: flat" 
-              visible="false">
-    </a-sphere>
-    
-    <a-entity camera position="0 0 0"></a-entity>
-  </a-scene>
+  <head>
+    <meta charset="utf-8">
+    <title>마커 기반 AR - 성공 보장 버전</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  </head>
 
-  <script>
-    const videoElement = document.getElementById('input_video');
-    const magicBall = document.getElementById('magic-ball');
-
-    // 1. MediaPipe Hands 설정
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
-
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.6,
-      minTrackingConfidence: 0.6
-    });
-
-    // 2. AI 인식 결과 처리
-    hands.onResults((results) => {
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const landmarks = results.multiHandLandmarks[0];
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+      
+      <a-marker preset="hiro">
+        <a-sphere 
+          position="0 0.5 0" 
+          radius="0.5" 
+          color="#FF4500" 
+          material="opacity: 0.9; shader: flat;">
+        </a-sphere>
         
-        // 8번 랜드마크: 검지 손가락 끝
-        const indexTip = landmarks[8];
-        
-        // 화면 좌표를 A-Frame 좌표로 변환 (거울 모드 반영)
-        // x값 계산 시 1에서 빼주는 이유는 비디오가 반전(scaleX -1)되어 있기 때문입니다.
-        const x = (1 - indexTip.x - 0.5) * 3; 
-        const y = -(indexTip.y - 0.5) * 2.2;
-        const z = -1.2; // 카메라 앞 약 1.2m 지점
+        <a-text value="Magic Found!" position="-0.5 0 0.6" rotation="-90 0 0" color="white" align="center"></a-text>
+      </a-marker>
 
-        magicBall.setAttribute('position', {x, y, z});
-        magicBall.setAttribute('visible', true);
-      } else {
-        magicBall.setAttribute('visible', false);
-      }
-    });
-
-    // 3. 카메라 실행 (MediaPipe 전용 유틸리티 사용)
-    const camera = new Camera(videoElement, {
-      onFrame: async () => {
-        await hands.send({image: videoElement});
-      },
-      width: 1280,
-      height: 720
-    });
-    
-    camera.start()
-      .then(() => console.log("카메라가 성공적으로 시작되었습니다."))
-      .catch(err => {
-        alert("카메라를 켤 수 없습니다. HTTPS 환경인지 확인해주세요.");
-        console.error(err);
-      });
-  </script>
-</body>
+      <a-entity camera></a-entity>
+      
+    </a-scene>
+  </body>
 </html>
