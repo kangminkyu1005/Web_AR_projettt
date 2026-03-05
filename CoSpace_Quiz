@@ -3,51 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Mobile WebAR</title>
+    <title>Harry Potter Scar AR</title>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-face-攜帶.prod.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-face-aframe.prod.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
-        #ui-overlay {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 30px;
-            font-family: sans-serif;
-            pointer-events: none;
+        #loading {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; z-index: 10;
         }
     </style>
 </head>
-<body style="margin: 0px; overflow: hidden;">
+<body>
 
-    <div id="ui-overlay">카메라로 주변을 비춰보세요</div>
+    <div id="loading">마법 주문을 거는 중... (얼굴을 비춰주세요)</div>
 
-    <a-scene 
-        embedded 
-        arjs="sourceType: webcam; debugUIEnabled: false;"
-        vr-mode-ui="enabled: false">
+    <a-scene mindar-face="filterMinCF:0.001; filterBeta:0.01" embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
-        <a-marker preset="hiro">
-            <a-box position="0 0.5 0" 
-                   material="color: #3b82f6; opacity: 0.8;" 
-                   animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-            </a-box>
-            <a-text value="Hello AR!" position="0 1.2 0" align="center" color="#ffffff"></a-text>
-        </a-marker>
+        <a-camera active="false" position="0 0 0"></a-camera>
 
-        <a-entity position="0 0 -5">
-            <a-sphere position="0 1.5 0" radius="0.5" color="#ef4444"
-                      animation="property: position; dir: alternate; dur: 1000; easing: easeInSine; loop: true; to: 0 1.8 0">
-            </a-sphere>
+        <a-entity mindar-face-target="anchorIndex: 10">
+            <a-image src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/lightning.png" 
+                     position="0 0.1 0" 
+                     width="0.3" 
+                     height="0.6" 
+                     material="transparent: true; opacity: 0.9">
+            </a-image>
+            
+            <a-text value="THE BOY WHO LIVED" 
+                    position="0 0.5 0" 
+                    align="center" 
+                    color="#ffc500" 
+                    width="1.5">
+            </a-text>
         </a-entity>
-
-        <a-entity camera></a-entity>
     </a-scene>
 
+    <script>
+        // 장면이 준비되면 로딩 메시지 숨김
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener("arReady", (event) => {
+            document.getElementById('loading').style.display = 'none';
+        });
+    </script>
 </body>
 </html>
