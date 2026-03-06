@@ -1,45 +1,74 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ko">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MindAR - 클릭 반응 피카츄</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindAR - 둥둥 떠있는 피카츄</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; }
+        /* 로딩 화면이나 안내 문구를 넣고 싶다면 여기에 추가 */
+    </style>
 </head>
-
 <body>
-  <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.001; filterBeta: 10;" color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false" cursor="fuse: false; rayOrigin: mouse"
-    raycaster="objects: .clickable"> <a-assets>
-      <img id="pikaImage" src="./pikachu.png">
-    </a-assets>
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 100; uiScanning: yes;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false"
+        cursor="fuse: false; rayOrigin: mouse"
+        raycaster="objects: .clickable">
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-assets>
+            <img id="pikaImage" src="./pikachu.png">
+        </a-assets>
 
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-image id="pikachu" class="clickable" src="#pikaImage" width="1" height="1" position="0 0 0.1"
-        animation__click="property: position; from: 0 0 0.1; to: 0 0.5 0.1; dur: 300; dir: alternate; loop: 2; startEvents: click">
-      </a-image>
-    </a-entity>
-  </a-scene>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-  <script>
-    // 클릭 시 추가적인 동작(예: 콘솔 로그나 소리)을 넣고 싶을 때 사용
-    const pikaEl = document.querySelector('#pikachu');
+        <a-entity mindar-image-target="targetIndex: 0">
+            
+            <a-image 
+                id="pikachu" 
+                class="clickable" 
+                src="#pikaImage" 
+                width="1" height="1" 
+                position="0 0 0.1"
+                
+                animation__float="property: position; to: 0 0.2 0.2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"
+                
+                animation__click="property: scale; from: 1 1 1; to: 1.4 1.4 1.4; dur: 150; dir: alternate; loop: 2; startEvents: click">
+            </a-image>
 
-    pikaEl.addEventListener('click', () => {
-      console.log("피카츄를 클릭했습니다!");
-      // 여기에 소리 재생 코드를 추가할 수 있습니다.
-    });
-  </script>
+            <a-ellipse 
+                color="#000" opacity="0.2" 
+                radius-x="0.4" radius-y="0.2" 
+                rotation="-90 0 0" 
+                position="0 -0.7 0">
+            </a-ellipse>
+
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const pikaEl = document.querySelector('#pikachu');
+
+        // 마우스 클릭 또는 화면 터치 시 실행되는 이벤트
+        pikaEl.addEventListener('click', () => {
+            console.log("피카츄가 반응합니다! 피카피카!");
+            
+            // 만약 소리 파일을 준비하셨다면 아래 주석을 해제하세요.
+            // const audio = new Audio('./pikachu_sound.mp3');
+            // audio.play();
+        });
+
+        // 마커를 찾았을 때의 추가 동작 (선택 사항)
+        const targetEl = document.querySelector('[mindar-image-target]');
+        targetEl.addEventListener("targetFound", event => {
+            console.log("마커를 찾았습니다. 피카츄 소환!");
+        });
+    </script>
 </body>
-
 </html>
